@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "x-stats",
+  "version": "1.0.0",
+  "description": "Local X analytics dashboard. Impressions, engagement, growth, per post.",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://x.com/*", "https://twitter.com/*"],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "x-stats"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["content/x-analytics.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "x-stats",
+  "version": "1.0.0",
+  "description": "Local X analytics dashboard for Chromium",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'load src/ as unpacked extension in brave://extensions'",
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/libs.test.js"
+  },
+  "devDependencies": {}
+}

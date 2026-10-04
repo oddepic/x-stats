@@ -1,0 +1,170 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>x-stats dashboard</title>
+  <link rel="stylesheet" href="../theme.css" />
+  <style>
+    body { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    header { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
+    .kpi b { font-size: 22px; display: block; }
+    .kpi span { font-size: 12px; color: var(--muted); }
+    .kpi small { font-size: 12px; }
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 800px) { .panels { grid-template-columns: 1fr; } }
+    .bars { display: flex; align-items: flex-end; gap: 2px; height: 120px; margin-top: 8px; }
+    .bars div { flex: 1; background: var(--accent); border-radius: 2px 2px 0 0; min-height: 2px; opacity: 0.85; }
+    .hours { display: flex; align-items: flex-end; gap: 2px; height: 90px; }
+    .hours div { flex: 1; background: var(--green); border-radius: 2px 2px 0 0; min-height: 2px; }
+    #q { width: 220px; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; align-items: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2 style="margin:0;display:flex;align-items:center;gap:8px">x-stats
+      <span class="muted" id="handle"></span>
+      <button id="editOwner" class="theme-btn" title="Edit owner handle" aria-label="Edit owner handle" style="width:24px;height:24px"></button>
+      <input id="owner" placeholder="@handle" style="width:130px" hidden />
+    </h2>
+    <div>
+      <select id="days">
+        <option value="7">Last 7 days</option>
+        <option value="28">Last 28 days</option>
+        <option value="90" selected>Last 3 months</option>
+        <option value="36500">All time</option>
+      </select>
+      <button id="sync" class="ghost">Sync current X tab</button>
+      <button id="csv" class="ghost">Export CSV</button>
+      <button id="theme" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <svg class="icon icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="icon icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </header>
+  <p class="muted" id="meta">Local only. Data stays in this browser.</p>
+
+  <div class="toolbar">
+    <button id="scopeMine">Personal</button>
+    <button id="scopeAll" class="ghost">Timeline (all)</button>
+    <span class="muted" id="scopeLabel"></span>
+    <span style="flex:1"></span>
+    <button id="resetMine" class="ghost">Reset mine</button>
+    <button id="resetAll" class="ghost">Reset timeline</button>
+    <button id="resetEverything" class="ghost">Reset everything</button>
+  </div>
+  <div class="toolbar" id="scanRow">
+    <button id="scan">Scan</button>
+    <button id="deepScan" class="ghost">Deep scan all</button>
+    <button id="stopScan" class="ghost">Stop</button>
+    <span class="muted" id="scanStatus"></span>
+  </div>
+
+  <div class="card" id="rangeWarn" hidden style="border-color:var(--amber);margin:16px 0 0">
+    <span id="rangeWarnText" style="font-size:13px"></span>
+    <div class="toolbar" style="margin:8px 0 0">
+      <button id="rangeWarnBtn">Show All time</button>
+    </div>
+  </div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <div class="panels">
+    <div class="card">
+      <strong>Impressions per day</strong>
+      <div class="bars" id="chart"></div>
+      <div class="muted" id="chartLabel" style="font-size:12px"></div>
+    </div>
+    <div class="card">
+      <strong>Best hour to post (avg views)</strong>
+      <div class="hours" id="hours"></div>
+      <div class="muted" id="hoursLabel" style="font-size:12px"></div>
+    </div>
+    <div class="card">
+      <strong>Top posts by impressions</strong>
+      <div id="top"></div>
+    </div>
+    <div class="card" id="profileCard">
+      <strong>Profile</strong>
+      <div id="profile"></div>
+    </div>
+  </div>
+
+  <div class="card" id="cleanupCard" style="margin-top:10px" hidden>
+    <div class="toolbar">
+      <strong>Cleanup: non-followbacks</strong>
+      <span class="muted" id="relStatus">Not scanned yet.</span>
+      <span style="flex:1"></span>
+      <button id="scanRel" class="ghost">Scan following</button>
+    </div>
+    <p class="muted" style="font-size:12px;margin:0 0 8px">
+      Finds people you follow who do not follow you back. Tick boxes, hit the person button.
+      Safe pace handles the rest: starts at 40 a day, rises to 100 on clean days, pauses itself on any X warning.
+      Remove deletes selected from the list.
+    </p>
+    <div class="toolbar">
+      <input id="wlInput" placeholder="@handle to always protect" style="width:200px" />
+      <button id="wlAdd" class="ghost">Protect</button>
+      <span class="muted" id="wlList" style="font-size:12px"></span>
+    </div>
+    <div class="toolbar">
+      <span class="muted" id="paceLabel" style="font-size:12px"></span>
+      <span style="flex:1"></span>
+      <button id="relDrop" class="ghost" title="Remove selected from the list. A rescan brings them back.">Remove</button>
+      <button id="startUnfollow" class="theme-btn" title="Unfollow selected" style="width:30px;height:30px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+      </button>
+      <span class="muted" id="unfollowStatus"></span>
+    </div>
+    <div style="overflow:auto;max-height:260px">
+      <table>
+        <thead><tr><th><input type="checkbox" id="relMaster" title="Select all non-followbacks" /></th><th>Handle</th><th>Follows you</th><th>Verified</th><th>Seen</th><th></th></tr></thead>
+        <tbody id="relRows"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:8px">
+      <strong style="font-size:13px">Action log</strong>
+      <div id="unfollowLog" class="muted" style="font-size:12px"></div>
+    </div>
+  </div>
+
+  <div class="card" id="importCard" style="margin-top:10px" hidden>
+    <div class="toolbar">
+      <strong>Import X analytics CSVs</strong>
+      <span class="muted" id="importStatus">Export 30 day windows from analytics.x.com, then drop the files here.</span>
+    </div>
+    <p class="muted" style="font-size:12px;margin:0 0 8px">
+      Each export caps at 3,000 posts per file. Import as many months as you need, rows merge by tweet id.
+    </p>
+    <div class="toolbar">
+      <input id="csvFiles" type="file" accept=".csv" multiple />
+      <button id="importCsv" class="ghost">Import</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <div class="toolbar">
+      <strong>All posts</strong>
+      <input id="q" placeholder="Filter text..." />
+      <select id="sort">
+        <option value="views">Sort by views</option>
+        <option value="likes">Sort by likes</option>
+        <option value="reposts">Sort by reposts</option>
+        <option value="replies">Sort by replies</option>
+        <option value="engagements">Sort by engagements</option>
+      </select>
+      <span class="muted" id="count"></span>
+    </div>
+    <div style="overflow:auto">
+      <table>
+        <thead><tr><th>Date</th><th>Post</th><th>Views</th><th>Likes</th><th>Reposts</th><th>Replies</th><th>Eng%</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="dashboard.js" type="module"></script>
+</body>
+</html>

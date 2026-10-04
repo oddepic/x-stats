@@ -1,0 +1,141 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../theme.css" />
+  <style>
+    body { width: 440px; padding: 14px; max-height: 600px; overflow-y: auto; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+    .stat b { font-size: 18px; display: block; }
+    .stat span { font-size: 11px; color: var(--muted); }
+    .row { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+    #status, #clProg, #clStatus { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 18px; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    .top-right { display: flex; align-items: center; gap: 8px; }
+    .clist { display: flex; flex-direction: column; overflow-y: auto; max-height: 220px; border: 1px solid var(--border); border-radius: 6px; margin-top: 8px; }
+    .crow { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .crow:last-child { border-bottom: none; }
+    .crow .h { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .crow .tag { font-size: 11px; color: var(--muted); }
+    .chead { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; margin-top: 8px; }
+    .mini { padding: 2px 8px; font-size: 12px; }
+    label.small { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+    #cap { width: 52px; }
+    .modgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .modcard { display: block; width: 100%; text-align: left; padding: 14px; }
+    .modcard svg { margin-bottom: 8px; }
+    .modcard b { font-size: 15px; display: block; }
+    .modcard span { font-size: 12px; color: var(--muted); font-weight: 400; }
+    .modhead { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .modhead h3 { margin: 0; font-size: 13px; flex: 1; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <strong>x-stats</strong>
+    <span class="top-right">
+      <select id="days">
+        <option value="7">7d</option>
+        <option value="28">28d</option>
+        <option value="90" selected>90d</option>
+        <option value="36500">All time</option>
+      </select>
+      <button id="theme" class="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <svg class="icon icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="icon icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </span>
+  </div>
+  <div class="muted" id="pageCtx" style="font-size:11px;margin-top:6px">Checking page...</div>
+
+  <section id="viewHome">
+    <div class="modgrid">
+      <button class="modcard" id="goAnalytics">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <b>Analytics</b>
+        <span id="modStatsLine">Loading...</span>
+      </button>
+      <button class="modcard ghost" id="goCleanup">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+        <b>Cleanup</b>
+        <span id="modCleanupLine">Loading...</span>
+      </button>
+    </div>
+    <div class="row">
+      <button id="open" class="ghost">Full dashboard</button>
+    </div>
+  </section>
+
+  <section id="viewStats" hidden>
+    <div class="modhead">
+      <button class="theme-btn backBtn" title="Back" aria-label="Back" style="width:24px;height:24px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h3>Analytics</h3>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button id="scopeMine">Personal</button>
+      <button id="scopeAll" class="ghost">All</button>
+    </div>
+    <div class="card" id="rangeWarn" hidden style="margin-top:8px;border-color:var(--amber)">
+      <span id="rangeWarnText" style="font-size:12px"></span>
+      <div class="row" style="margin-top:6px">
+        <button id="rangeWarnBtn" class="mini">Show All time</button>
+      </div>
+    </div>
+
+    <div class="card" id="emptyState" hidden style="margin-top:8px;text-align:center;padding:20px 12px">
+      <b id="emptyTitle" style="font-size:14px">No data tracked yet</b>
+      <p class="muted" id="emptyText" style="font-size:12px;margin:6px 0 12px"></p>
+      <button id="emptySync">Sync</button>
+    </div>
+
+    <div class="grid" id="statGrid">
+      <div class="card stat"><b id="sViews">-</b><span>Impressions</span></div>
+      <div class="card stat"><b id="sEng">-</b><span>Engagements</span></div>
+      <div class="card stat"><b id="sRate">-</b><span>Eng. rate</span></div>
+      <div class="card stat" id="statFol"><b id="sFol">-</b><span>Followers</span></div>
+      <div class="card stat"><b id="sLikes">-</b><span>Likes</span></div>
+      <div class="card stat"><b id="sPosts">-</b><span>Posts tracked</span></div>
+    </div>
+
+    <div class="row" id="syncRow">
+      <button id="sync">Sync this page</button>
+    </div>
+    <div id="status">Open your X profile, then Sync.</div>
+  </section>
+
+  <section id="viewCleanup" hidden>
+    <div class="modhead">
+      <button class="theme-btn backBtn" title="Back" aria-label="Back" style="width:24px;height:24px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h3>Cleanup</h3>
+    </div>
+    <div id="clStatus">Not scanned yet. Scans your following list for non-followbacks.</div>
+    <div class="row">
+      <button id="clScan" class="ghost" title="Collect every account on your following list, right here on this tab">Scan following</button>
+      <span class="muted" id="clPace" style="font-size:11px" title="Starts at 40 unfollows a day. Clean days raise it step by step to 100. Any warning from X resets it and pauses a full day."></span>
+    </div>
+    <div class="crow chead">
+      <input type="checkbox" id="clMaster" title="Select all non-followbacks" />
+      <span class="h muted" id="clCount" style="font-size:12px"></span>
+      <button id="clDrop" class="theme-btn" title="Remove selected from the list. A rescan brings them back." style="width:24px;height:24px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+      <button id="clUnfollow" class="theme-btn" style="width:24px;height:24px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+      </button>
+    </div>
+    <div class="clist" id="clList"></div>
+    <div id="clProg"></div>
+    <div class="muted" style="font-size:11px;margin-top:4px">Tick boxes, hit the person button. Safe pace handles the rest: starts at 40 a day, rises to 100 on clean days, pauses itself on any X warning.</div>
+    <div class="row">
+      <input id="clWl" placeholder="@handle to protect" style="flex:1" />
+      <button id="clWlAdd" class="ghost mini">Protect</button>
+    </div>
+  </section>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
